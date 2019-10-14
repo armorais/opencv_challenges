@@ -1,0 +1,4 @@
+/home/curso_visao/opencv_challenges/aula_2/build/CMakeFiles/edit_cache.dir
+/home/curso_visao/opencv_challenges/aula_2/build/CMakeFiles/rebuild_cache.dir
+/home/curso_visao/opencv_challenges/aula_2/build/CMakeFiles/color_segmentation.dir
+/home/curso_visao/opencv_challenges/aula_2/build/CMakeFiles/vignette.dir
