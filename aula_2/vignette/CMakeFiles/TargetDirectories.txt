@@ -1,0 +1,3 @@
+/home/curso_visao/cv/curso_visao_cimatec/aula_2/vignette/CMakeFiles/edit_cache.dir
+/home/curso_visao/cv/curso_visao_cimatec/aula_2/vignette/CMakeFiles/rebuild_cache.dir
+/home/curso_visao/cv/curso_visao_cimatec/aula_2/vignette/CMakeFiles/vignette.dir
