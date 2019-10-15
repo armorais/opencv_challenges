@@ -13,8 +13,8 @@ target_link_libraries(vignette ${OpenCV_LIBRARIES})
 #add_executable(canny src/canny.cpp)
 #target_link_libraries(canny ${OpenCV_LIBRARIES})
 
-#add_executable(color_segmentation src/color_segmentation.cpp)
-#target_link_libraries(color_segmentation ${OpenCV_LIBRARIES})
+add_executable(color_segmentation src/color_segmentation.cpp)
+target_link_libraries(color_segmentation ${OpenCV_LIBRARIES})
 
 #add_executable(contours src/contours.cpp)
 #target_link_libraries(contours ${OpenCV_LIBRARIES})
