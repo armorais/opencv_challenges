@@ -111,19 +111,6 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named color_segmentation
-
-# Build rule for target.
-color_segmentation: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 color_segmentation
-.PHONY : color_segmentation
-
-# fast build rule for target.
-color_segmentation/fast:
-	$(MAKE) -f CMakeFiles/color_segmentation.dir/build.make CMakeFiles/color_segmentation.dir/build
-.PHONY : color_segmentation/fast
-
-#=============================================================================
 # Target rules for targets named vignette
 
 # Build rule for target.
@@ -135,6 +122,32 @@ vignette: cmake_check_build_system
 vignette/fast:
 	$(MAKE) -f CMakeFiles/vignette.dir/build.make CMakeFiles/vignette.dir/build
 .PHONY : vignette/fast
+
+#=============================================================================
+# Target rules for targets named red_segmentation
+
+# Build rule for target.
+red_segmentation: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 red_segmentation
+.PHONY : red_segmentation
+
+# fast build rule for target.
+red_segmentation/fast:
+	$(MAKE) -f CMakeFiles/red_segmentation.dir/build.make CMakeFiles/red_segmentation.dir/build
+.PHONY : red_segmentation/fast
+
+#=============================================================================
+# Target rules for targets named color_segmentation
+
+# Build rule for target.
+color_segmentation: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 color_segmentation
+.PHONY : color_segmentation
+
+# fast build rule for target.
+color_segmentation/fast:
+	$(MAKE) -f CMakeFiles/color_segmentation.dir/build.make CMakeFiles/color_segmentation.dir/build
+.PHONY : color_segmentation/fast
 
 # target to build an object file
 src/color_segmentation.o:
@@ -150,6 +163,21 @@ src/color_segmentation.i:
 src/color_segmentation.s:
 	$(MAKE) -f CMakeFiles/color_segmentation.dir/build.make CMakeFiles/color_segmentation.dir/src/color_segmentation.s
 .PHONY : src/color_segmentation.s
+
+# target to build an object file
+src/red_segmentation.o:
+	$(MAKE) -f CMakeFiles/red_segmentation.dir/build.make CMakeFiles/red_segmentation.dir/src/red_segmentation.o
+.PHONY : src/red_segmentation.o
+
+# target to preprocess a source file
+src/red_segmentation.i:
+	$(MAKE) -f CMakeFiles/red_segmentation.dir/build.make CMakeFiles/red_segmentation.dir/src/red_segmentation.i
+.PHONY : src/red_segmentation.i
+
+# target to generate assembly for a file
+src/red_segmentation.s:
+	$(MAKE) -f CMakeFiles/red_segmentation.dir/build.make CMakeFiles/red_segmentation.dir/src/red_segmentation.s
+.PHONY : src/red_segmentation.s
 
 # target to build an object file
 src/vignette.o:
@@ -173,12 +201,16 @@ help:
 	@echo "... clean"
 	@echo "... depend"
 	@echo "... edit_cache"
-	@echo "... rebuild_cache"
-	@echo "... color_segmentation"
 	@echo "... vignette"
+	@echo "... red_segmentation"
+	@echo "... color_segmentation"
+	@echo "... rebuild_cache"
 	@echo "... src/color_segmentation.o"
 	@echo "... src/color_segmentation.i"
 	@echo "... src/color_segmentation.s"
+	@echo "... src/red_segmentation.o"
+	@echo "... src/red_segmentation.i"
+	@echo "... src/red_segmentation.s"
 	@echo "... src/vignette.o"
 	@echo "... src/vignette.i"
 	@echo "... src/vignette.s"

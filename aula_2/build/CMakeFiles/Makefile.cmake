@@ -48,6 +48,7 @@ set(CMAKE_MAKEFILE_PRODUCTS
 
 # Dependency information for all targets:
 set(CMAKE_DEPEND_INFO_FILES
-  "CMakeFiles/color_segmentation.dir/DependInfo.cmake"
   "CMakeFiles/vignette.dir/DependInfo.cmake"
+  "CMakeFiles/red_segmentation.dir/DependInfo.cmake"
+  "CMakeFiles/color_segmentation.dir/DependInfo.cmake"
   )

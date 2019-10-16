@@ -7,6 +7,9 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 add_executable(vignette src/vignette.cpp)
 target_link_libraries(vignette ${OpenCV_LIBRARIES})
 
+add_executable(red_segmentation src/red_segmentation.cpp)
+target_link_libraries(red_segmentation ${OpenCV_LIBRARIES})
+
 #add_executable(blur src/blur.cpp)
 #target_link_libraries(blur ${OpenCV_LIBRARIES})
 
