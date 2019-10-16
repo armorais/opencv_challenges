@@ -53,6 +53,19 @@ Mat applyThreshold(Mat input, int value)
 
 int main(int argc, char **argv)
 {
+    /*
+    *   argv[1]: Image Path
+    *   argv[2]: Min value of red [0 ... 100]
+    *   argv[3]: Max value of red [0 ... 100]
+    * 
+    *   The values are given in %. For example: 
+    *   x = 0 and y = 0 -> the focus will be in the bottom left corner of the image 
+    *   x = 50 and y = 50 -> the focus will be in the center of the image 
+    *   x = 0 and y = 0 -> the focus will be in the top right corner of the image 
+    * 
+    *   Example: ./vignette ../data/car.jpg 100 50 50
+    */
+
     string path = argv[1];
     int min = stoi(argv[2]) * (LOWER_RED_MAX - LOWER_RED_MIN)/100;
     int max = stoi(argv[3]) * (UPPER_RED_MAX - UPPER_RED_MIN)/100;
@@ -61,7 +74,7 @@ int main(int argc, char **argv)
     Mat image = imread(path, cv::IMREAD_UNCHANGED);
     Mat image_hsv, mask1, mask2, result;
 
-    // Resize the image to fit low
+    // Resize the image to fit low resolution screens
     //resize(image,image,Size(),0.5,0.5);
 
     // Convert from BGR color space to HSV
