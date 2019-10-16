@@ -54,8 +54,8 @@ Mat applyThreshold(Mat input, int value)
 int main(int argc, char **argv)
 {
     string path = argv[1];
-    int min = stoi(argv[2]);
-    int max = stoi(argv[3]);
+    int min = stoi(argv[2]) * (LOWER_RED_MAX - LOWER_RED_MIN)/100;
+    int max = stoi(argv[3]) * (UPPER_RED_MAX - UPPER_RED_MIN)/100;
 
     // Load OpenCV image without changing anything on their color pattern
     Mat image = imread(path, cv::IMREAD_UNCHANGED);
@@ -67,11 +67,16 @@ int main(int argc, char **argv)
     // Convert from BGR color space to HSV
     cvtColor(image, image_hsv, COLOR_BGR2HSV);
     
-    // Create mask to detect the lower red color (from 0 to 30)
-    inRange(image_hsv, Scalar(LOWER_RED_MIN+min, 120, 70), Scalar(LOWER_RED_MAX-max, 255, 255), mask1);
+    // Create mask to detect the lower red color (from LOWER_RED_MIN to LOWER_RED_MAX)
+    inRange(image_hsv, Scalar(LOWER_RED_MIN+min, 120, 70), Scalar(LOWER_RED_MIN+max, 255, 255), mask1);
     
-    // Create mask to detect the upper red color (from 150 to 180)
-    inRange(image_hsv, Scalar(UPPER_RED_MIN+min, 120, 70), Scalar(UPPER_RED_MAX-max, 255, 255), mask2);
+    // Create mask to detect the upper red color (from LOWER_RED_MIN to LOWER_RED_MAX)
+    inRange(image_hsv, Scalar(UPPER_RED_MIN+min, 120, 70), Scalar(UPPER_RED_MIN+max, 255, 255), mask2);
+
+    cout << LOWER_RED_MIN+min << endl;
+    cout << LOWER_RED_MAX-max << endl;
+    cout << UPPER_RED_MIN+min << endl;
+    cout << UPPER_RED_MAX-max << endl;
 
     // Generating the final mask
     mask1 = mask1 + mask2;
