@@ -3,6 +3,11 @@
 #include <string>
 #include <opencv2/opencv.hpp>
 
+#define LOWER_RED_MIN 0
+#define LOWER_RED_MAX 30
+#define UPPER_RED_MIN 150
+#define UPPER_RED_MAX 180
+
 using namespace cv;
 using namespace std;
 
@@ -52,43 +57,32 @@ int main(int argc, char **argv)
     int min = stoi(argv[2]);
     int max = stoi(argv[3]);
 
-    // Load OpenCV image withou change anything on their color pattern
+    // Load OpenCV image without changing anything on their color pattern
     Mat image = imread(path, cv::IMREAD_UNCHANGED);
+    Mat image_hsv, mask1, mask2, result;
+
+    // Resize the image to fit low
     //resize(image,image,Size(),0.5,0.5);
-    Mat hsv;
 
-    // Get image dimensions
-    int cols = image.cols;
-    int rows = image.rows;
-
-    cvtColor(image, hsv, COLOR_BGR2HSV);
-
-    Mat mask1, mask2;
-    // Creating masks to detect the upper and lower red color.
-    inRange(hsv, Scalar(0+min, 120, 70), Scalar(30-max, 255, 255), mask1);
-    inRange(hsv, Scalar(150+min, 120, 70), Scalar(180-max, 255, 255), mask2);
+    // Convert from BGR color space to HSV
+    cvtColor(image, image_hsv, COLOR_BGR2HSV);
+    
+    // Create mask to detect the lower red color (from 0 to 30)
+    inRange(image_hsv, Scalar(LOWER_RED_MIN+min, 120, 70), Scalar(LOWER_RED_MAX-max, 255, 255), mask1);
+    
+    // Create mask to detect the upper red color (from 150 to 180)
+    inRange(image_hsv, Scalar(UPPER_RED_MIN+min, 120, 70), Scalar(UPPER_RED_MAX-max, 255, 255), mask2);
 
     // Generating the final mask
     mask1 = mask1 + mask2;
+ 
+    // Mask the HSV image with the final mask
+    bitwise_and(image_hsv,image_hsv,result,mask1);
 
-    Mat kernel = Mat::ones(3,3, CV_32F);
-    morphologyEx(mask1,mask1,cv::MORPH_OPEN,kernel);
-    morphologyEx(mask1,mask1,cv::MORPH_DILATE,kernel);
-    
-    // creating an inverted mask to segment out the cloth from the frame
-    bitwise_not(mask1,mask2);
-    Mat res1, res2, final_output;
+    // Convert the result from HSV color space to BGR
+    cvtColor(result,result,COLOR_HSV2BGR);
 
-    //cv::GaussianBlur(mask1, mask1, cv::Size(1,1),10,10);
-    
-    // Segmenting the cloth out of the frame using bitwise and with the inverted mask
-    bitwise_and(hsv,hsv,res1,mask1);
-
-    cout << mask2.type() << endl;
-
-    cvtColor(res1,res1,COLOR_HSV2BGR);
-
-    showImage(unifyImages({image, res1}, 1));
+    showImage(unifyImages({image, result}, 1));
 
     return 0;
 }
