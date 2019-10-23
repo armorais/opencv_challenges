@@ -5,6 +5,11 @@
 * Depending on face given, Sometimes it would detect an eye as a mouth, so now everytime it detects
 * an item it paints a filled retangule to take the detected part off the image.
 *
+* The output images are saved in the output folder.
+*
+* You can use the SHOW_IMAGE flag if you want to 
+* control if the program shoud show the output images or not.
+*
 * Extra cascades added: 
 * Mouth detector by Modesto Castrillon-Santana, distributed in the opencv_contrib's face module (opencv_contrib/modules/face/data/cascades/)
 * Nose detector by Modesto Castrillon-Santana, distributed in the opencv_contrib's face module (opencv_contrib/modules/face/data/cascades/)
@@ -19,15 +24,19 @@
 using namespace std;
 using namespace cv;
 
-std::map<string,Mat> detect(Mat);
+// Flag to control if the program shoud show the output images
+const int SHOW_IMAGE = 1; // Change the value to 0 if you don't want to show the image
+
+std::map<String,Mat> detect(Mat);
 int loadCascades();
-void saveOutput(std::map<string,Mat>);
+void showImage(String name, Mat image);
+void saveOutput(std::map<String,Mat>);
 
 // Paths to the trained classifiers
-static String eyes_cascade_name = "../haar_data/haar_eyeglasses.xml";
-static String mouth_cascade_name = "../haar_data/haarcascade_mcs_mouth.xml";
-static String nose_cascade_name = "../haar_data/haarcascade_mcs_nose.xml";
-static String face_cascade_name = "../haar_data/haar_face.xml";
+const String EYES_CASCADE_NAME = "../haar_data/haar_eyeglasses.xml";
+const String MOUTH_CASCADE_NAME = "../haar_data/haarcascade_mcs_mouth.xml";
+const String NOSE_CASCADE_NAME = "../haar_data/haarcascade_mcs_nose.xml";
+const String FACE_CASCADE_NAME = "../haar_data/haar_face.xml";
 
 CascadeClassifier mouth_cascade;
 CascadeClassifier face_cascade;
@@ -35,12 +44,12 @@ CascadeClassifier nose_cascade;
 CascadeClassifier eyes_cascade;
 
 // Detects the itens and returns a map containing <region,image>
-std::map<string,Mat> detect(Mat image)
+std::map<String,Mat> detect(Mat image)
 {
-    std::vector<Rect> eyes;
-    std::vector<Rect> mouths;
-    std::vector<Rect> noses;
     std::vector<Rect> faces;
+    std::vector<Rect> eyes;
+    std::vector<Rect> noses;
+    std::vector<Rect> mouths;
 
     std::map<string,Mat> output;
 
@@ -53,7 +62,7 @@ std::map<string,Mat> detect(Mat image)
     equalizeHist(image_gray, image_gray);
 
     // Tries to detect faces in the equalized image
-    face_cascade.detectMultiScale(image_gray, faces, 1.1, 2, 0, Size(60, 60));
+    face_cascade.detectMultiScale(image_gray, faces, 1.1, 2, CASCADE_FIND_BIGGEST_OBJECT, Size(60, 60));
 
     // If there's no face found, returns 0
     
@@ -67,7 +76,7 @@ std::map<string,Mat> detect(Mat image)
         output.insert({"face",faceROIOriginal}); // Inserts the found face into the output map
 
         // Detects eyes inside the face region of interest
-        eyes_cascade.detectMultiScale(faceROIOriginal, eyes, 1.05, 3, CASCADE_FIND_BIGGEST_OBJECT, Size(30, 30));
+        eyes_cascade.detectMultiScale(faceROI, eyes, 1.05, 3, CASCADE_FIND_BIGGEST_OBJECT, Size(30, 30));
 
         for (size_t j = 0; j < eyes.size(); j++)
         {
@@ -78,7 +87,7 @@ std::map<string,Mat> detect(Mat image)
         }
 
         // Detects noses inside the face region of interest
-        nose_cascade.detectMultiScale(faceROIOriginal, noses, 1.3, 6, 0, Size(10, 10));
+        nose_cascade.detectMultiScale(faceROI, noses, 1.3, 6, 0, Size(10, 10));
 
         for (size_t j = 0; j < noses.size(); j++)
         {
@@ -90,7 +99,7 @@ std::map<string,Mat> detect(Mat image)
         }
 
         // Detects mouths inside the face region of interest
-        mouth_cascade.detectMultiScale(faceROIOriginal, mouths, 1.3, 6, 0, Size(10, 10));
+        mouth_cascade.detectMultiScale(faceROI, mouths, 1.3, 6, 0, Size(10, 10));
 
         for (size_t j = 0; j < mouths.size(); j++)
         {
@@ -104,13 +113,6 @@ std::map<string,Mat> detect(Mat image)
         break;
     }
 
-    // Show the output
-/*    for(map<string, Mat>::iterator aux=output.begin(); aux!=output.end(); aux++) 
-    {
-        imshow(aux->first, aux->second);
-        waitKey(0);
-    }    
-*/    
     return output;
 }
 
@@ -118,28 +120,28 @@ std::map<string,Mat> detect(Mat image)
 int loadCascades()
 {
     // Loads the face cascade
-    if (!face_cascade.load(face_cascade_name))
+    if (!face_cascade.load(FACE_CASCADE_NAME))
     {
         cout << "Error loading face cascade." << endl;
         return 0;
     };
 
     // Loads the eyes cascade
-    if (!eyes_cascade.load(eyes_cascade_name))
+    if (!eyes_cascade.load(EYES_CASCADE_NAME))
     {
         cout << "Error loading eye cascade." << endl;
         return 0;
     };
 
     // Loads the nose cascade
-    if (!nose_cascade.load(nose_cascade_name))
+    if (!nose_cascade.load(NOSE_CASCADE_NAME))
     {
         cout << "Error loading nose cascade." << endl;
         return 0;
     };
 
     // Loads the mouth cascade
-    if (!mouth_cascade.load(mouth_cascade_name))
+    if (!mouth_cascade.load(MOUTH_CASCADE_NAME))
     {
         cout << "Error loading mouth cascade" << endl;
         return 0;
@@ -148,8 +150,14 @@ int loadCascades()
     return 1;
 }
 
+void showImage(String name, Mat image)
+{
+    imshow(name, image);
+    waitKey(0);
+}
+
 // Iterates through the output map and export its content  
-void saveOutput(std::map<string,Mat> output)
+void saveOutput(std::map<String,Mat> output)
 {
     // Compression parameters for imwrite
     vector<int> compression_params;
@@ -160,16 +168,18 @@ void saveOutput(std::map<string,Mat> output)
     system("exec rm -r ../output/*");
 
     // Iterates through the map and saves the results in the output folder
-    for(map<string, Mat>::iterator aux=output.begin(); aux!=output.end(); aux++) 
+    for(map<String, Mat>::iterator aux=output.begin(); aux!=output.end(); aux++) 
     {
         imwrite("../output/" + aux->first + ".png", aux->second,compression_params);
+        if(SHOW_IMAGE)
+            showImage(aux->first, aux->second);
     }
 }
 
 int main(int argc, const char **argv)
 {
     String path = argv[1];
-    std::map<string,Mat> output;
+    std::map<String,Mat> output;
 
     // Reads input image
     Mat image = imread(path, cv::IMREAD_UNCHANGED);
