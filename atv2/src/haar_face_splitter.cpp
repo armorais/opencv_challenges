@@ -19,9 +19,9 @@
 using namespace std;
 using namespace cv;
 
-std::vector<Mat> detect(Mat frame);
+std::map<string,Mat> detect(Mat);
 int loadCascades();
-void saveOutput(std::vector<Mat>);
+void saveOutput(std::map<string,Mat>);
 
 // Paths to the trained classifiers
 static String eyes_cascade_name = "../haar_data/haar_eyeglasses.xml";
@@ -34,15 +34,28 @@ CascadeClassifier face_cascade;
 CascadeClassifier nose_cascade;
 CascadeClassifier eyes_cascade;
 
+std::map<string,Mat> output;
+
 static string window_name = "Face splitter";
 
-std::vector<Mat> detect(Mat image)
+// Inserts an item to the output map
+void addOutput(string region_name, Mat roi) {
+    Mat roiOutput;
+
+    // Makes a copy of the face ROI, because the original roi is going to be modified during the detections.
+    roi.copyTo(roiOutput);
+
+    output.insert({region_name,roiOutput});
+}
+
+// Detects the itens and returns a map containing <region,image>
+std::map<string,Mat> detect(Mat image)
 {
     std::vector<Rect> eyes;
     std::vector<Rect> mouths;
     std::vector<Rect> noses;
     std::vector<Rect> faces;
-    std::vector<Mat> output;
+    
 
     Mat image_gray;
 
@@ -59,50 +72,44 @@ std::vector<Mat> detect(Mat image)
     
     for (size_t i = 0; i < faces.size(); i++)
     {
-        Mat faceROIOutput;
-        Mat faceROI = image(faces[0]);
-        // Make a copy of the face ROI, because the original faceROI is going to be modified during the detections.
-        faceROI.copyTo(faceROIOutput);
-        output.push_back(faceROIOutput);
+        Mat faceROIOriginal = image(faces[0]);
+        Mat faceROI ;
+        // Makes a copy of the face ROI, because the original faceROI is going to be modified during the detections.
+        faceROIOriginal.copyTo(faceROI);
+        addOutput("face", faceROI); // Inserts the found eye into the output map
 
         // Detects eyes inside the face region of interest
-        eyes_cascade.detectMultiScale(faceROI, eyes, 1.05, 3, CASCADE_FIND_BIGGEST_OBJECT, Size(30, 30));
+        eyes_cascade.detectMultiScale(faceROIOriginal, eyes, 1.05, 3, CASCADE_FIND_BIGGEST_OBJECT, Size(30, 30));
 
         for (size_t j = 0; j < eyes.size(); j++)
         {
-            Mat eyeOutput;
-            faceROIOutput(eyes[j]).copyTo(eyeOutput); // Copy the found eye to an auxiliar Mat
-            output.push_back(eyeOutput); // Save the found eye into the output vector
+            addOutput("eye"+ std::to_string(j+1), faceROI(eyes[j])); // Inserts the found eye into the output map
 
-            // Draw a filled rectangle. I used this to "eliminate" already detected regions from the faceROI.
-            rectangle(faceROI, eyes[j].tl(), eyes[j].br(), Scalar(0, 0, 0), FILLED);
+            // Draws a filled rectangle. I used this to "eliminate" already detected regions from the faceROI.
+            rectangle(faceROIOriginal, eyes[j].tl(), eyes[j].br(), Scalar(0, 0, 0), FILLED);
         }
 
         // Detects noses inside the face region of interest
-        nose_cascade.detectMultiScale(faceROI, noses, 1.3, 6, 0, Size(10, 10));
+        nose_cascade.detectMultiScale(faceROIOriginal, noses, 1.3, 6, 0, Size(10, 10));
 
         for (size_t j = 0; j < noses.size(); j++)
         {
-            Mat noseOutput;
-            faceROIOutput(noses[j]).copyTo(noseOutput); // Copy the found nose to an auxiliar Mat
-            output.push_back(noseOutput); // Save the found nose into the output vector
+            addOutput("nose", faceROI(noses[j])); // Inserts the found eye into the output map
 
-            // Draw a filled rectangle. I used this to "eliminate" already detected regions from the faceROI.
-            rectangle(faceROI, noses[j].tl(), noses[j].br(), Scalar(0, 0, 0), FILLED);
+            // Draws a filled rectangle. I used this to "eliminate" already detected regions from the faceROI.
+            rectangle(faceROIOriginal, noses[j].tl(), noses[j].br(), Scalar(0, 0, 0), FILLED);
             break;
         }
 
         // Detects mouths inside the face region of interest
-        mouth_cascade.detectMultiScale(faceROI, mouths, 1.3, 6, 0, Size(10, 10));
+        mouth_cascade.detectMultiScale(faceROIOriginal, mouths, 1.3, 6, 0, Size(10, 10));
 
         for (size_t j = 0; j < mouths.size(); j++)
         {
-            Mat mouthOutput;
-            faceROIOutput(mouths[j]).copyTo(mouthOutput); // Copy the found mouth to an auxiliar Mat
-            output.push_back(mouthOutput); // Save the found mouth into the output vector
+            addOutput("mouth", faceROI(mouths[j])); // Inserts the found eye into the output map
 
-            // Draw a filled rectangle. I used this to "eliminate" already detected regions from the faceROI.
-            rectangle(faceROI, mouths[j].tl(), mouths[j].br(), Scalar(0, 0, 0), FILLED);
+            // Draws a filled rectangle. I used this to "eliminate" already detected regions from the faceROI.
+            rectangle(faceROIOriginal, mouths[j].tl(), mouths[j].br(), Scalar(0, 0, 0), FILLED);
             break;
         }
 
@@ -118,30 +125,31 @@ std::vector<Mat> detect(Mat image)
     return output;
 }
 
+// Loads the cascades
 int loadCascades()
 {
-    // Load the face cascade
+    // Loads the face cascade
     if (!face_cascade.load(face_cascade_name))
     {
         cout << "Error loading face cascade." << endl;
         return 0;
     };
 
-    // Load the eyes cascade
+    // Loads the eyes cascade
     if (!eyes_cascade.load(eyes_cascade_name))
     {
         cout << "Error loading eye cascade." << endl;
         return 0;
     };
 
-    // Load the nose cascade
+    // Loads the nose cascade
     if (!nose_cascade.load(nose_cascade_name))
     {
         cout << "Error loading nose cascade." << endl;
         return 0;
     };
 
-    // Load the mouth cascade
+    // Loads the mouth cascade
     if (!mouth_cascade.load(mouth_cascade_name))
     {
         cout << "Error loading mouth cascade" << endl;
@@ -151,35 +159,40 @@ int loadCascades()
     return 1;
 }
 
-void saveOutput(std::vector<Mat> output)
+// Iterates through the output map and export its content  
+void saveOutput(std::map<string,Mat> output)
 {
+    // Compression parameters for imwrite
     vector<int> compression_params;
     compression_params.push_back(IMWRITE_PNG_COMPRESSION);
     compression_params.push_back(9);
 
-    cout << output.size() <<endl;
+    // Clears the output folder (Only works in Linux! I didn't want to include a lib dependency to do cross-plataform checking)
+    system("exec rm -r ../output/*");
 
-    for(int i=0; i<output.size(); i++) {
-        imwrite("../output/" + to_string(i) + ".jpg", output[i],compression_params);
+    // Iterates through the map and saves the results in the output folder
+    for(map<string, Mat>::iterator aux=output.begin(); aux!=output.end(); aux++) 
+    {
+        imwrite("../output/" + aux->first + ".png", aux->second,compression_params);
     }
 }
 
 int main(int argc, const char **argv)
 {
     String path = argv[1];
-    std::vector<Mat> output;
+    std::map<string,Mat> output;
 
-    // Read input image
+    // Reads input image
     Mat image = imread(path, cv::IMREAD_UNCHANGED);
 
-    // Resize if needed
+    // Resizes the image if needed
     //resize(image,image,Size(),0.5,0.5);
 
-    // Load the cascades
+    // Loads the cascades
     if (!loadCascades())
         return -1;
     
-    // Call the detection function and save the result, if not empty
+    // Calls the detection function and saves the result, if not empty
     if(!(output = detect(image)).empty())
         saveOutput(output);
     else
