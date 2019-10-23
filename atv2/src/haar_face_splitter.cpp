@@ -19,8 +19,9 @@
 using namespace std;
 using namespace cv;
 
-int detectAndDisplay(Mat frame);
+std::vector<Mat> detect(Mat frame);
 int loadCascades();
+void saveOutput(std::vector<Mat>);
 
 // Paths to the trained classifiers
 static String eyes_cascade_name = "../haar_data/haar_eyeglasses.xml";
@@ -35,7 +36,7 @@ CascadeClassifier eyes_cascade;
 
 static string window_name = "Face splitter";
 
-int detectAndDisplay(Mat image)
+std::vector<Mat> detect(Mat image)
 {
     std::vector<Rect> eyes;
     std::vector<Rect> mouths;
@@ -55,11 +56,7 @@ int detectAndDisplay(Mat image)
     face_cascade.detectMultiScale(image_gray, faces, 1.1, 2, 0, Size(60, 60));
 
     // If there's no face found, returns 0
-    if(faces.empty()) {
-        cout << "No face detected in this image." << endl;
-        return 0;
-    }
-
+    
     for (size_t i = 0; i < faces.size(); i++)
     {
         Mat faceROIOutput;
@@ -112,13 +109,13 @@ int detectAndDisplay(Mat image)
         break;
     }
 
-    for (int i = 0; i < output.size(); i++)
+/*     for (int i = 0; i < output.size(); i++)
     {
         imshow(window_name, output[i]);
         waitKey(0);
-    }
-
-    return 0;
+    } */
+    
+    return output;
 }
 
 int loadCascades()
@@ -154,9 +151,23 @@ int loadCascades()
     return 1;
 }
 
+void saveOutput(std::vector<Mat> output)
+{
+    vector<int> compression_params;
+    compression_params.push_back(IMWRITE_PNG_COMPRESSION);
+    compression_params.push_back(9);
+
+    cout << output.size() <<endl;
+
+    for(int i=0; i<output.size(); i++) {
+        imwrite("../output/" + to_string(i) + ".jpg", output[i],compression_params);
+    }
+}
+
 int main(int argc, const char **argv)
 {
     String path = argv[1];
+    std::vector<Mat> output;
 
     // Read input image
     Mat image = imread(path, cv::IMREAD_UNCHANGED);
@@ -168,6 +179,9 @@ int main(int argc, const char **argv)
     if (!loadCascades())
         return -1;
     
-    // Call the detection function
-    return detectAndDisplay(image);
+    // Call the detection function and save the result, if not empty
+    if(!(output = detect(image)).empty())
+        saveOutput(output);
+    else
+        cout << "No face detected in this image." << endl;
 }
