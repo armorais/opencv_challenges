@@ -1,3 +1,17 @@
+/*
+* Haar face splitter is my solution to the second challenge.
+*
+* I added some stuff to make it easier to detect some parts of the face, especially the mouth.
+* Depending on face given, Sometimes it would detect an eye as a mouth, so now everytime it detects
+* an item it paints a filled retangule to take the detected part off the image.
+*
+* Extra cascades added: 
+* Mouth detector by Modesto Castrillon-Santana, distributed in the opencv_contrib's face module (opencv_contrib/modules/face/data/cascades/)
+* Nose detector by Modesto Castrillon-Santana, distributed in the opencv_contrib's face module (opencv_contrib/modules/face/data/cascades/)
+* 
+* Author: Alison Morais
+*/
+
 #include <iostream>
 #include <stdio.h>
 #include <opencv2/opencv.hpp>
@@ -5,150 +19,155 @@
 using namespace std;
 using namespace cv;
 
-/** Function Headers */
-void detectAndDisplay(Mat frame);
+int detectAndDisplay(Mat frame);
+int loadCascades();
 
-/** Global variables */
-String eyes_cascade_name = "../haar_data/haarcascade_mcs_eyepair_small.xml";
-String left_eye_cascade_name = "../haar_data/haarcascade_mcs_lefteye.xml";
-String right_eye_cascade_name = "../haar_data/haarcascade_mcs_righteye.xml";
-String mouth_cascade_name = "../haar_data/haarcascade_mcs_mouth.xml";
-String nose_cascade_name = "../haar_data/haarcascade_mcs_nose.xml";
-String face_cascade_name = "../haar_data/haar_face.xml";
-CascadeClassifier left_eye_cascade;
-CascadeClassifier right_eye_cascade;
+// Paths to the trained classifiers
+static String eyes_cascade_name = "../haar_data/haar_eyeglasses.xml";
+static String mouth_cascade_name = "../haar_data/haarcascade_mcs_mouth.xml";
+static String nose_cascade_name = "../haar_data/haarcascade_mcs_nose.xml";
+static String face_cascade_name = "../haar_data/haar_face.xml";
+
 CascadeClassifier mouth_cascade;
 CascadeClassifier face_cascade;
 CascadeClassifier nose_cascade;
 CascadeClassifier eyes_cascade;
-string window_name = "Capture - Face detection";
-RNG rng(12345);
 
-/** @function main */
-int main(int argc, const char **argv)
+static string window_name = "Face splitter";
+
+int detectAndDisplay(Mat image)
 {
-      String path = argv[1];
+    std::vector<Rect> eyes;
+    std::vector<Rect> mouths;
+    std::vector<Rect> noses;
+    std::vector<Rect> faces;
+    std::vector<Mat> output;
 
-      // Read
-      Mat image = imread(path, cv::IMREAD_UNCHANGED);
+    Mat image_gray;
 
-      //resize(image,image,Size(),0.5,0.5);
+    // Converts input image to grayscale before equalizing
+    cvtColor(image, image_gray, COLOR_BGR2GRAY);
 
-      // Load the cascades
-      if (!eyes_cascade.load(eyes_cascade_name))
-      {
-            printf("--(!)Error loading eye pair\n");
-            return -1;
-      };
-      if (!left_eye_cascade.load(left_eye_cascade_name))
-      {
-            printf("--(!)Error loading left eye\n");
-            return -1;
-      };
-      if (!right_eye_cascade.load(right_eye_cascade_name))
-      {
-            printf("--(!)Error loading right eye\n");
-            return -1;
-      };
-      if (!mouth_cascade.load(mouth_cascade_name))
-      {
-            printf("--(!)Error loading mouth\n");
-            return -1;
-      };
-      if (!face_cascade.load(face_cascade_name))
-      {
-            printf("--(!)Error loading face\n");
-            return -1;
-      };
-      if (!nose_cascade.load(nose_cascade_name))
-      {
-            printf("--(!)Error loading face\n");
-            return -1;
-      };
+    // Equalizes the histogram to normalize brightness and contrast
+    equalizeHist(image_gray, image_gray);
 
-      // Calls the detection function
-      detectAndDisplay(image);
-      return 0;
+    // Tries to detect faces in the equalized image
+    face_cascade.detectMultiScale(image_gray, faces, 1.1, 2, 0, Size(60, 60));
+
+    // If there's no face found, returns 0
+    if(faces.empty()) {
+        cout << "No face detected in this image." << endl;
+        return 0;
+    }
+
+    for (size_t i = 0; i < faces.size(); i++)
+    {
+        Mat faceROIOutput;
+        Mat faceROI = image(faces[0]);
+        // Make a copy of the face ROI, because the original faceROI is going to be modified during the detections.
+        faceROI.copyTo(faceROIOutput);
+        output.push_back(faceROIOutput);
+
+        // Detects eyes inside the face region of interest
+        eyes_cascade.detectMultiScale(faceROI, eyes, 1.05, 3, CASCADE_FIND_BIGGEST_OBJECT, Size(30, 30));
+
+        for (size_t j = 0; j < eyes.size(); j++)
+        {
+            Mat eyeOutput;
+            faceROIOutput(eyes[j]).copyTo(eyeOutput); // Copy the found eye to an auxiliar Mat
+            output.push_back(eyeOutput); // Save the found eye into the output vector
+
+            // Draw a filled rectangle. I used this to "eliminate" already detected regions from the faceROI.
+            rectangle(faceROI, eyes[j].tl(), eyes[j].br(), Scalar(0, 0, 0), FILLED);
+        }
+
+        // Detects noses inside the face region of interest
+        nose_cascade.detectMultiScale(faceROI, noses, 1.3, 6, 0, Size(10, 10));
+
+        for (size_t j = 0; j < noses.size(); j++)
+        {
+            Mat noseOutput;
+            faceROIOutput(noses[j]).copyTo(noseOutput); // Copy the found nose to an auxiliar Mat
+            output.push_back(noseOutput); // Save the found nose into the output vector
+
+            // Draw a filled rectangle. I used this to "eliminate" already detected regions from the faceROI.
+            rectangle(faceROI, noses[j].tl(), noses[j].br(), Scalar(0, 0, 0), FILLED);
+            break;
+        }
+
+        // Detects mouths inside the face region of interest
+        mouth_cascade.detectMultiScale(faceROI, mouths, 1.3, 6, 0, Size(10, 10));
+
+        for (size_t j = 0; j < mouths.size(); j++)
+        {
+            Mat mouthOutput;
+            faceROIOutput(mouths[j]).copyTo(mouthOutput); // Copy the found mouth to an auxiliar Mat
+            output.push_back(mouthOutput); // Save the found mouth into the output vector
+
+            // Draw a filled rectangle. I used this to "eliminate" already detected regions from the faceROI.
+            rectangle(faceROI, mouths[j].tl(), mouths[j].br(), Scalar(0, 0, 0), FILLED);
+            break;
+        }
+
+        break;
+    }
+
+    for (int i = 0; i < output.size(); i++)
+    {
+        imshow(window_name, output[i]);
+        waitKey(0);
+    }
+
+    return 0;
 }
 
-/** @function detectAndDisplay */
-void detectAndDisplay(Mat image)
-
+int loadCascades()
 {
-      std::vector<Rect> eyes;
-      std::vector<Rect> left_eyes;
-      std::vector<Rect> right_eyes;
-      std::vector<Rect> mouths;
-      std::vector<Rect> noses;
-      std::vector<Rect> faces;
+    // Load the face cascade
+    if (!face_cascade.load(face_cascade_name))
+    {
+        cout << "Error loading face cascade." << endl;
+        return 0;
+    };
 
-      Mat image_gray;
+    // Load the eyes cascade
+    if (!eyes_cascade.load(eyes_cascade_name))
+    {
+        cout << "Error loading eye cascade." << endl;
+        return 0;
+    };
 
-      // Converts to grayscale
-      cvtColor(image, image_gray, COLOR_BGR2GRAY);
+    // Load the nose cascade
+    if (!nose_cascade.load(nose_cascade_name))
+    {
+        cout << "Error loading nose cascade." << endl;
+        return 0;
+    };
 
-      // Equalizes the histogram to normalize brightness and contrast
-      equalizeHist(image_gray, image_gray);
+    // Load the mouth cascade
+    if (!mouth_cascade.load(mouth_cascade_name))
+    {
+        cout << "Error loading mouth cascade" << endl;
+        return 0;
+    };
 
-      // Detects face
-      face_cascade.detectMultiScale(image_gray, faces, 1.1, 2, 0, Size(60, 60));
+    return 1;
+}
 
-      for (size_t i = 0; i < faces.size(); i++)
-      {
-            rectangle(image, faces[i].tl(), faces[i].br(), Scalar(255, 0, 0), 2);
+int main(int argc, const char **argv)
+{
+    String path = argv[1];
 
-            Mat faceROI = image(faces[0]);
+    // Read input image
+    Mat image = imread(path, cv::IMREAD_UNCHANGED);
 
-            // Detects eyes
-            eyes_cascade.detectMultiScale(faceROI, eyes, 1.05, 3, CASCADE_FIND_BIGGEST_OBJECT, Size(30, 30));
-            
-            for (size_t j = 0; j < eyes.size(); j++)
-            {
-                  Mat eyeRoi = faceROI(eyes[j]);
+    // Resize if needed
+    //resize(image,image,Size(),0.5,0.5);
 
-                  // Detects left eye
-                  left_eye_cascade.detectMultiScale(eyeRoi, left_eyes, 1.6, 2, 0, Size(30, 30));
-
-                  for (size_t k = 0; k < left_eyes.size(); k++)
-                  {
-                        rectangle(eyeRoi, left_eyes[k].tl(), left_eyes[k].br(), Scalar(255, 0, 0), FILLED);
-                        break;
-                  }
-                  
-                  // Detects right eye
-                  right_eye_cascade.detectMultiScale(eyeRoi, right_eyes, 1.6, 2, 0, Size(30, 30));
-
-                  for (size_t k = 0; k < right_eyes.size(); k++)
-                  {
-                        rectangle(eyeRoi, right_eyes[k].tl(), right_eyes[k].br(), Scalar(0, 0, 0), FILLED);
-                        break;
-                  }
-                  
-                  rectangle(faceROI, eyes[j].tl(), eyes[j].br(), Scalar(0, 0, 0), FILLED);
-                  break;
-            }
-
-            // Detects noses
-            nose_cascade.detectMultiScale(faceROI, noses, 1.3, 6, 0, Size(10, 10));
-
-            for (size_t j = 0; j < noses.size(); j++)
-            {
-                  rectangle(faceROI, noses[j].tl(), noses[j].br(), Scalar(0, 255, 0), FILLED);
-                  break;
-            }
-
-            // Detects mouth
-            mouth_cascade.detectMultiScale(faceROI, mouths, 1.3, 6, 0, Size(10, 10));
-
-            for (size_t j = 0; j < mouths.size(); j++)
-            {
-                  rectangle(faceROI, mouths[j].tl(), mouths[j].br(), Scalar(0, 0, 255), FILLED);
-                  break;
-            }
-
-            break;
-      }
-      resize(image, image, Size(), 0.5, 0.5);
-      imshow(window_name, image);
-      waitKey(0);
+    // Load the cascades
+    if (!loadCascades())
+        return -1;
+    
+    // Call the detection function
+    return detectAndDisplay(image);
 }

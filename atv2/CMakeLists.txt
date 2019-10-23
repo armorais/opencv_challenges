@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.1)
-project(haar)
+project(atv2)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_GXX_FLAGS "-Wall -Wextra -Wconversion  -pedantic")
