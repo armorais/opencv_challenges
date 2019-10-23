@@ -34,20 +34,6 @@ CascadeClassifier face_cascade;
 CascadeClassifier nose_cascade;
 CascadeClassifier eyes_cascade;
 
-std::map<string,Mat> output;
-
-static string window_name = "Face splitter";
-
-// Inserts an item to the output map
-void addOutput(string region_name, Mat roi) {
-    Mat roiOutput;
-
-    // Makes a copy of the face ROI, because the original roi is going to be modified during the detections.
-    roi.copyTo(roiOutput);
-
-    output.insert({region_name,roiOutput});
-}
-
 // Detects the itens and returns a map containing <region,image>
 std::map<string,Mat> detect(Mat image)
 {
@@ -55,7 +41,8 @@ std::map<string,Mat> detect(Mat image)
     std::vector<Rect> mouths;
     std::vector<Rect> noses;
     std::vector<Rect> faces;
-    
+
+    std::map<string,Mat> output;
 
     Mat image_gray;
 
@@ -76,17 +63,18 @@ std::map<string,Mat> detect(Mat image)
         Mat faceROI ;
         // Makes a copy of the face ROI, because the original faceROI is going to be modified during the detections.
         faceROIOriginal.copyTo(faceROI);
-        addOutput("face", faceROI); // Inserts the found eye into the output map
+
+        output.insert({"face",faceROIOriginal}); // Inserts the found face into the output map
 
         // Detects eyes inside the face region of interest
         eyes_cascade.detectMultiScale(faceROIOriginal, eyes, 1.05, 3, CASCADE_FIND_BIGGEST_OBJECT, Size(30, 30));
 
         for (size_t j = 0; j < eyes.size(); j++)
         {
-            addOutput("eye"+ std::to_string(j+1), faceROI(eyes[j])); // Inserts the found eye into the output map
+            output.insert({"eyes" + to_string(j+1),faceROIOriginal(eyes[j])}); // Inserts the found eye into the output map
 
             // Draws a filled rectangle. I used this to "eliminate" already detected regions from the faceROI.
-            rectangle(faceROIOriginal, eyes[j].tl(), eyes[j].br(), Scalar(0, 0, 0), FILLED);
+            rectangle(faceROI, eyes[j].tl(), eyes[j].br(), Scalar(0, 0, 0), FILLED);
         }
 
         // Detects noses inside the face region of interest
@@ -94,10 +82,10 @@ std::map<string,Mat> detect(Mat image)
 
         for (size_t j = 0; j < noses.size(); j++)
         {
-            addOutput("nose", faceROI(noses[j])); // Inserts the found eye into the output map
+            output.insert({"nose",faceROIOriginal(noses[j])}); // Inserts the found nose into the output map
 
             // Draws a filled rectangle. I used this to "eliminate" already detected regions from the faceROI.
-            rectangle(faceROIOriginal, noses[j].tl(), noses[j].br(), Scalar(0, 0, 0), FILLED);
+            rectangle(faceROI, noses[j].tl(), noses[j].br(), Scalar(0, 0, 0), FILLED);
             break;
         }
 
@@ -106,22 +94,23 @@ std::map<string,Mat> detect(Mat image)
 
         for (size_t j = 0; j < mouths.size(); j++)
         {
-            addOutput("mouth", faceROI(mouths[j])); // Inserts the found eye into the output map
+            output.insert({"mouth",faceROIOriginal(mouths[j])}); // Inserts the found mouth into the output map
 
             // Draws a filled rectangle. I used this to "eliminate" already detected regions from the faceROI.
-            rectangle(faceROIOriginal, mouths[j].tl(), mouths[j].br(), Scalar(0, 0, 0), FILLED);
+            rectangle(faceROI, mouths[j].tl(), mouths[j].br(), Scalar(0, 0, 0), FILLED);
             break;
         }
 
         break;
     }
 
-/*     for (int i = 0; i < output.size(); i++)
+    // Show the output
+/*    for(map<string, Mat>::iterator aux=output.begin(); aux!=output.end(); aux++) 
     {
-        imshow(window_name, output[i]);
+        imshow(aux->first, aux->second);
         waitKey(0);
-    } */
-    
+    }    
+*/    
     return output;
 }
 
