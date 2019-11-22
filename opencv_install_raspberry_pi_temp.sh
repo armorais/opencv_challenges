@@ -1,6 +1,8 @@
 cvVersion="4.1.2"
 
 sudo sed -i 's/CONF_SWAPSIZE=100/CONF_SWAPSIZE=2048/g' /etc/dphys-swapfile
+sudo /etc/init.d/dphys-swapfile stop
+sudo /etc/init.d/dphys-swapfile start
 
 cd opencv
 mkdir build
