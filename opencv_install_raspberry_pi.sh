@@ -101,11 +101,11 @@ cmake -D CMAKE_BUILD_TYPE=RELEASE \
             -D OPENCV_EXTRA_MODULES_PATH=../../opencv_contrib/modules \
             -D BUILD_EXAMPLES=ON ..
 
+make -j$(nproc)
+make install
+
 sudo sed -i 's/CONF_SWAPSIZE=2048/CONF_SWAPSIZE=100/g' /etc/dphys-swapfile
 sudo /etc/init.d/dphys-swapfile stop
 sudo /etc/init.d/dphys-swapfile start
-
-make -j$(nproc)
-make install
 
 echo "sudo modprobe bcm2835-v4l2" >> ~/.profile
